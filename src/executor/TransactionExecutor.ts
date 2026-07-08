@@ -104,7 +104,7 @@ export class TransactionExecutor {
     );
 
     await this.watcher.removePosition(pos.address);
-    this.bot?.notifyPositionClosed(pos, reason, lastSignature, finalPnl, receivedA, receivedB);
+    this.bot?.notifyPositionClosed(pos, reason, lastSignature, finalPnl, receivedA, receivedB, finalUsd);
   }
 
   // ─── private ──────────────────────────────────────────────────────────────

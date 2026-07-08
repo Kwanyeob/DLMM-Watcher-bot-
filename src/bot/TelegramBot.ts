@@ -89,6 +89,7 @@ export class TelegramBot {
     finalPnl: number,
     receivedA: number,
     receivedB: number,
+    finalUsd: number,
   ): void {
     const emoji = reason === 'tp' ? '✅' : reason === 'sl' ? '🔴' : reason === 'skew' ? '🟡' : '🔒';
     const label = reason === 'tp' ? 'Take Profit Hit' : reason === 'sl' ? 'Stop Loss Hit' :
@@ -97,7 +98,7 @@ export class TelegramBot {
     const msg =
       `${emoji} *Position Closed — ${label}*\n\n` +
       `Pool: \`${this.esc(pos.tokenSymbolA)}/${this.esc(pos.tokenSymbolB)}\`  \\[\\#${pos.shortId}\\]\n` +
-      `Final PnL: *${pnlStr}*\n` +
+      `Final Value: *\\$${this.esc(finalUsd.toFixed(4))}*  │  Final PnL: *${pnlStr}*\n` +
       `Received: ${this.esc(receivedA.toFixed(6))} ${this.esc(pos.tokenSymbolA)} \\+ ` +
       `${this.esc(receivedB.toFixed(6))} ${this.esc(pos.tokenSymbolB)}\n` +
       `[View on Solscan](https://solscan\\.io/tx/${this.esc(signature)})`;
@@ -662,7 +663,7 @@ export class TelegramBot {
     return (
       `🆕 *New DLMM Position Detected\\!*\n\n` +
       `Pool: \`${this.esc(pos.tokenSymbolA)}/${this.esc(pos.tokenSymbolB)}\`  \\[\\#${pos.shortId}\\]\n` +
-      `Entry Value: *\\$${this.esc(pos.entryTotalUsd.toFixed(2))}*\n` +
+      `Entry Value: *\\$${this.esc(pos.entryTotalUsd.toFixed(4))}*\n` +
       `Range: \`${this.esc(fmtPrice(lowerPrice))}\` \\(${this.fmtPct(lowerPct)}\\) → ` +
       `\`${this.esc(fmtPrice(upperPrice))}\` \\(${this.fmtPct(upperPct)}\\)\n` +
       `Amounts: ${this.esc(pos.entryAmountA.toFixed(6))} ${this.esc(pos.tokenSymbolA)} \\+ ` +
@@ -703,7 +704,7 @@ export class TelegramBot {
 
       lines.push(
         `\\#${pos.shortId} *${this.esc(pos.tokenSymbolA)}/${this.esc(pos.tokenSymbolB)}*${closing}\n` +
-        `   Entry: \\$${this.esc(pos.entryTotalUsd.toFixed(2))}  │  Value: \\$${this.esc(totalUsd.toFixed(2))}\n` +
+        `   Entry: \\$${this.esc(pos.entryTotalUsd.toFixed(4))}  │  Value: \\$${this.esc(totalUsd.toFixed(4))}\n` +
         `   PnL incl fee: *${this.fmtPct(pnlInclFee)}*  │  excl fee: *${this.fmtPct(pnlExclFee)}*\n` +
         `   SL/TP: ${sl} / ${tp}\n` +
         `   Ratio: ${this.esc(pos.tokenSymbolA)} ${this.esc(currentRatioA.toFixed(1))}% / ` +
