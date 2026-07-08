@@ -17,6 +17,8 @@ import { logger } from '../utils/logger';
 import { fmtPrice } from '../utils/format';
 import type { TelegramBot } from '../bot/TelegramBot';
 
+const sleep = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
+
 interface Subs {
   posSubId: number;
   lbPairSubId: number;
@@ -129,17 +131,26 @@ export class PositionWatcher {
       const typeB = classifyQuoteToken(mintB);
       ensureTokenTracked(mintB, typeB);
 
-      const parsed = await parsePositionData(
-        this.connection,
-        lbPairAddress,
-        positionAddress,
-        this.walletAddress,
-        infoA.decimals,
-        infoB.decimals,
-      );
+      // Freshly-opened position may not be visible yet on the RPC node that answers this
+      // read — the confirmed-commitment notification and this query can land on different
+      // backend nodes behind a load-balanced RPC provider. Retry a few times before giving up.
+      let parsed: Awaited<ReturnType<typeof parsePositionData>> = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        parsed = await parsePositionData(
+          this.connection,
+          lbPairAddress,
+          positionAddress,
+          this.walletAddress,
+          infoA.decimals,
+          infoB.decimals,
+        );
+        if (parsed) break;
+        logger.debug(`   parsePositionData attempt ${attempt} returned null, retrying...`);
+        await sleep(1_500);
+      }
 
       if (!parsed) {
-        logger.warn(`Could not parse position ${positionAddress.slice(0, 8)}...`);
+        logger.warn(`Could not parse position ${positionAddress.slice(0, 8)}... after 3 attempts`);
         return;
       }
 
