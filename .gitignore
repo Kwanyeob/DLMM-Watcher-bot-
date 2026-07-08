@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# secrets — never commit
+.env
+.env.local
+
+# runtime state / logs (user-specific, regenerated locally)
+data/
+logs/
+
+# claude code plugin state
+.omc/
+
+# OS
+.DS_Store
+Thumbs.db
