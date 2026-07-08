@@ -1,5 +1,5 @@
 import { Connection, PublicKey, AccountInfo, Context } from '@solana/web3.js';
-import DLMM, { decodeAccount } from '@meteora-ag/dlmm';
+import DLMM from '@meteora-ag/dlmm';
 import { StateDB } from '../db/StateDB';
 import { PositionState } from '../types';
 import { DetectedPosition } from '../detector/PositionDetector';
@@ -274,10 +274,13 @@ export class PositionWatcher {
       'confirmed',
     );
 
+    // Position composition (currentAmountA/B, fees) is a derived value that shifts with the
+    // active bin — it can change without the position account itself being written to, so a
+    // pool-wide price move needs the same full refresh as a direct position-account change.
     const lbPairSubId = this.connection.onAccountChange(
       lbPairKey,
-      (info: AccountInfo<Buffer>, _ctx: Context) => {
-        void this.handleLbPairChange(pos.address, info);
+      (_info: AccountInfo<Buffer>, _ctx: Context) => {
+        void this.refreshPosition(pos.address);
       },
       'confirmed',
     );
@@ -287,28 +290,6 @@ export class PositionWatcher {
       `   📌 #${pos.shortId} ${pos.tokenSymbolA}/${pos.tokenSymbolB}` +
       `  pos=${posSubId} lbPair=${lbPairSubId}`,
     );
-  }
-
-  private async handleLbPairChange(positionAddress: string, info: AccountInfo<Buffer>): Promise<void> {
-    const pos = this.db.getByAddress(positionAddress);
-    if (!pos || pos.isClosing) return;
-
-    try {
-      const dlmm = await getOrCreateDlmm(this.connection, pos.lbPairAddress);
-      const lbPairState = decodeAccount(dlmm.program, 'lbPair', info.data) as any;
-      const activeId = Number(lbPairState.activeId);
-      const rawPrice = Math.pow(1 + pos.binStep / 10_000, activeId);
-      const lbPairPrice = rawPrice * Math.pow(10, pos.decimalA - pos.decimalB);
-      logger.debug(
-        `[lbPairChange] #${pos.shortId} ${pos.tokenSymbolA}/${pos.tokenSymbolB}\n` +
-        `  Active Bin    : ${activeId}\n` +
-        `  Current Price : ${fmtPrice(pos.lbPairPrice)} → ${fmtPrice(lbPairPrice)} ${pos.tokenSymbolB}/${pos.tokenSymbolA}`,
-      );
-      this.db.update(positionAddress, { lbPairPrice });
-      this.riskEngine.check(positionAddress);
-    } catch (err) {
-      logger.error(`handleLbPairChange error [${positionAddress.slice(0, 8)}...]: ${err}`);
-    }
   }
 
   private async refreshPosition(positionAddress: string): Promise<void> {
