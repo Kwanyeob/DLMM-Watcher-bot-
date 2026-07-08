@@ -49,8 +49,8 @@ export class RiskEngine {
     logger.debug(
       `[RiskEngine] #${pos.shortId} ${pos.tokenSymbolA}/${pos.tokenSymbolB}\n` +
       `  Current Price  : ${fmtPrice(pos.lbPairPrice)} ${pos.tokenSymbolB}/${pos.tokenSymbolA} | ${pos.tokenSymbolB}/USD: $${priceB.toFixed(4)}\n` +
-      `  My Liquidity   : $${myLiqUsd.toFixed(2)}  |  Unclaimed Fees: $${feesUsd.toFixed(2)}\n` +
-      `  Total Value    : $${totalUsd.toFixed(2)}  |  Deposited Value: $${pos.entryTotalUsd.toFixed(2)}\n` +
+      `  My Liquidity   : $${myLiqUsd.toFixed(4)}  |  Unclaimed Fees: $${feesUsd.toFixed(4)}\n` +
+      `  Total Value    : $${totalUsd.toFixed(4)}  |  Deposited Value: $${pos.entryTotalUsd.toFixed(4)}\n` +
       `  P&L            : ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}%  |  SL: ${pos.slPercent !== null ? `-${pos.slPercent}%` : 'not set'}  |  TP: ${pos.tpPercent !== null ? `+${pos.tpPercent}%` : 'not set'}`,
     );
 

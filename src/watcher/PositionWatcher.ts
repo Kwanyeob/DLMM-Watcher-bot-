@@ -66,7 +66,7 @@ export class PositionWatcher {
     for (const pos of valid) {
       logger.info(
         `   #${pos.shortId}  ${pos.tokenSymbolA}/${pos.tokenSymbolB}` +
-        `  entry=$${pos.entryTotalUsd.toFixed(2)}` +
+        `  entry=$${pos.entryTotalUsd.toFixed(4)}` +
         `  SL=${pos.slPercent !== null ? pos.slPercent + '%' : '-'}` +
         `  TP=${pos.tpPercent !== null ? pos.tpPercent + '%' : '-'}`,
       );
@@ -371,7 +371,7 @@ export class PositionWatcher {
       `[#${pos.shortId}] ${pos.tokenSymbolA}/${pos.tokenSymbolB}` +
       `  A=${pos.currentAmountA.toFixed(4)}  B=${pos.currentAmountB.toFixed(4)}` +
       `  fee(A=${pos.feeA.toFixed(6)} B=${pos.feeB.toFixed(6)})` +
-      `  $${totalUsd.toFixed(2)}  PnL: ${pnlStr}`,
+      `  $${totalUsd.toFixed(4)}  PnL: ${pnlStr}`,
     );
   }
 
@@ -389,14 +389,14 @@ export class PositionWatcher {
     logger.info(dash);
     logger.info(
       `  Token A : ${pos.entryAmountA.toFixed(6)} ${pos.tokenSymbolA}` +
-      `  ($${valueA.toFixed(2)})   ${pos.entryRatioA.toFixed(1)}%`,
+      `  ($${valueA.toFixed(4)})   ${pos.entryRatioA.toFixed(1)}%`,
     );
     logger.info(
       `  Token B : ${pos.entryAmountB.toFixed(6)} ${pos.tokenSymbolB}` +
-      `  ($${valueB.toFixed(2)})   ${pos.entryRatioB.toFixed(1)}%`,
+      `  ($${valueB.toFixed(4)})   ${pos.entryRatioB.toFixed(1)}%`,
     );
     logger.info(dash);
-    logger.info(`  Entry   : $${pos.entryTotalUsd.toFixed(2)}`);
+    logger.info(`  Entry   : $${pos.entryTotalUsd.toFixed(4)}`);
     logger.info(`  Price   : ${fmtPrice(pos.lbPairPrice)} ${pos.tokenSymbolB}/${pos.tokenSymbolA}`);
     const binPrice = (id: number) =>
       Math.pow(1 + pos.binStep / 10_000, id) * Math.pow(10, pos.decimalA - pos.decimalB);

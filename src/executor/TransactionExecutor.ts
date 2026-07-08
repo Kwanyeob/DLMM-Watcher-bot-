@@ -96,6 +96,13 @@ export class TransactionExecutor {
       ? ((finalUsd - pos.entryTotalUsd) / pos.entryTotalUsd) * 100
       : 0;
 
+    logger.info(
+      `   Internal final valuation — ` +
+      `${pos.tokenSymbolA}: ${receivedA.toFixed(9)} ($${(receivedA * priceA).toFixed(4)})  ` +
+      `${pos.tokenSymbolB}: ${receivedB.toFixed(9)} ($${(receivedB * priceB).toFixed(4)})  ` +
+      `Total: $${finalUsd.toFixed(4)}  PnL: ${finalPnl >= 0 ? '+' : ''}${finalPnl.toFixed(4)}%`,
+    );
+
     await this.watcher.removePosition(pos.address);
     this.bot?.notifyPositionClosed(pos, reason, lastSignature, finalPnl, receivedA, receivedB);
   }
