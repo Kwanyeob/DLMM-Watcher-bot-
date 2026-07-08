@@ -82,8 +82,8 @@ These checks run **on every on-chain account change** (bin price move, liquidity
 ## Setup
 
 ```bash
-git clone <your-fork-url>
-cd dlmm-watcher-bot
+git clone https://github.com/Kwanyeob/DLMM-Watcher-bot-.git
+cd DLMM-Watcher-bot-
 npm install
 
 cp .env.example .env
@@ -286,8 +286,8 @@ PnL% = (현재 가치USD − 진입 가치USD) / 진입 가치USD × 100
 ## 셋업
 
 ```bash
-git clone <your-fork-url>
-cd dlmm-watcher-bot
+git clone https://github.com/Kwanyeob/DLMM-Watcher-bot-.git
+cd DLMM-Watcher-bot-
 npm install
 
 cp .env.example .env
