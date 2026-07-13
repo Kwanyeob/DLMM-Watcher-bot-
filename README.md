@@ -142,6 +142,18 @@ Every notification (`/status`, new position, closed position) also renders inlin
 
 ---
 
+## A note on PnL accuracy vs. Meteora's UI
+
+The `RiskEngine` computes PnL independently from data it reads directly on-chain (the position account + the pool's `lbPair` account) combined with its own [tiered price feed](#price-feed-tiers) — it does not call Meteora's API or scrape their UI. Because of that, the bot's PnL will track Meteora's displayed PnL closely but will not match it to the last cent. A few structural reasons why exact parity isn't possible:
+
+- **Independent price feeds** — this bot prices the quote token via Pyth/Jupiter; Meteora's UI sources its price from wherever it sources it internally. Two independently-updating feeds rarely land on the exact same value at the exact same instant.
+- **Snapshot vs. live render** — the bot recalculates value only when a tracked account changes or a price tick arrives, not continuously. There's always a small window between the true current on-chain state and what the bot last observed, while Meteora's UI re-renders on its own schedule.
+- **Fee accrual rounding** — unclaimed fees are read from the pool's fee accumulator and converted at the current price; small differences in exactly when that accumulator is sampled shift the fee component slightly relative to what Meteora shows at the same moment.
+
+This is inherent to using two separately-sourced pricing/state pipelines, not a bug — SL/TP/ratio thresholds should be set with that margin in mind.
+
+---
+
 ## Disclaimer
 
 This bot holds a private key and signs real, irreversible on-chain transactions. It is not audited. Test extensively with `DRY_RUN=true` and a small position before using it with meaningful capital, and never commit or share your `.env`. Use at your own risk.
@@ -288,6 +300,18 @@ npm run dev          # ts-node로 로컬 실행, 빌드 불필요
 | `/panic` → `/panic confirm` | 추적 중인 **모든** 포지션 긴급 청산 (30초 확인 대기) |
 
 `/status`를 포함한 모든 알림(신규 포지션, 청산 완료)에는 인라인 버튼이 함께 렌더링되어, 일상적인 사용에는 타이핑이 거의 필요 없습니다.
+
+---
+
+## Meteora UI와의 PnL 차이에 대해
+
+`RiskEngine`은 Meteora API를 호출하거나 UI를 긁어오지 않고, 온체인에서 직접 읽은 데이터(포지션 계정 + 풀의 `lbPair` 계정)와 자체 [티어드 가격 피드](#가격-피드-티어)만으로 PnL을 독립적으로 계산합니다. 그래서 봇의 PnL은 Meteora UI가 보여주는 값과 비슷하게 움직이지만, 소수점 끝자리까지 완전히 일치하지는 않습니다. 100% 동일한 값이 나올 수 없는 구조적인 이유는 다음과 같습니다:
+
+- **독립적인 가격 피드** — 이 봇은 쿼트 토큰 가격을 Pyth/Jupiter에서 가져오는 반면, Meteora UI는 내부적으로 별도의 소스를 사용합니다. 서로 독립적으로 갱신되는 두 피드가 정확히 같은 순간에 같은 값을 보여주는 경우는 거의 없습니다.
+- **스냅샷 vs 실시간 렌더링** — 봇은 추적 중인 계정에 변화가 생기거나 가격 틱이 들어올 때만 가치를 재계산하며, 연속적으로 계산하지 않습니다. 그래서 실제 온체인 상태와 봇이 마지막으로 관측한 시점 사이에는 항상 약간의 시차가 존재하는 반면, Meteora UI는 자체 주기로 다시 렌더링합니다.
+- **수수료 누적분 반올림** — 미청구 수수료는 풀의 fee accumulator에서 읽어와 현재가로 환산하는데, 이 accumulator를 정확히 언제 샘플링하느냐에 따라 같은 순간에도 Meteora가 보여주는 값과 수수료 부분이 미세하게 달라질 수 있습니다.
+
+이는 서로 다른 두 개의 가격/상태 파이프라인을 사용하는 데서 오는 구조적인 차이이지 버그가 아닙니다 — SL/TP/비율 임계값을 설정할 때 이 오차 범위를 감안해야 합니다.
 
 ---
 
