@@ -90,7 +90,7 @@ cp .env.example .env
 # fill in the values below
 
 npm run build
-npm run pm2:start   # production, auto-restart via pm2
+npm start            # production
 # or
 npm run dev          # local run with ts-node, no build step
 ```
@@ -119,7 +119,6 @@ npm run dev          # local run with ts-node, no build step
 | `npm run dev` | Run directly with `ts-node`, no build |
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run the compiled build |
-| `npm run pm2:start` / `pm2:stop` / `pm2:logs` | Manage the process under pm2 |
 | `npm test` | Run the test suite (vitest) |
 | `npm run simulate` | Run the local simulation script |
 
@@ -140,60 +139,6 @@ npm run dev          # local run with ts-node, no build step
 | `/panic` → `/panic confirm` | Emergency close **all** tracked positions (30s confirmation window) |
 
 Every notification (`/status`, new position, closed position) also renders inline buttons — most day-to-day use needs no typing at all.
-
----
-
-## 🎯 Execution & Validation Showcase
-
-A real-time example of the bot catching market volatility, calculating PnL via the internal Risk Engine, and executing a Take-Profit close on Meteora DLMM with millisecond-level precision.
-
-### Timeline
-
-The bot detects an active-bin jump, triggers the TP logic, and fully closes the position within ~1.1s on-chain (confirmed within ~2.5s via RPC):
-
-```
-[21:48:22.890]  Active bin jump detected (-301 → -300)
-       │  1 ms
-       ▼
-[21:48:22.891]  RiskEngine triggered — PnL +1.52% ≥ TP +1.50%
-       │  2 ms
-       ▼
-[21:48:22.893]  Close transaction dispatched
-       │  1,107 ms
-       ▼
-[21:48:24.000]  Transaction mined on-chain (Solscan timestamp)
-       │  1,651 ms
-       ▼
-[21:48:25.651]  RPC confirmation received
-```
-
-Detection → dispatch was **278ms** end-to-end — demonstrating the value of tracking via direct account subscriptions instead of polling.
-
-### Cross-verification against on-chain settlement
-
-The internal `RiskEngine` valuation at the moment of close was checked against the actual on-chain settlement (ground truth, via Solscan) and Meteora's own UI:
-
-| | Internal (RiskEngine) | On-chain (Solscan) | Meteora UI |
-|---|---|---|---|
-| **MENSA removed** | ~$1.48 total | 128.909374 MENSA ($0.5342) | 128.91 MENSA |
-| **SOL removed** | ~$1.48 total | 0.011537728 WSOL ($0.9422) | 0.012 SOL |
-| **MENSA fee claimed** | $0.00 | 0 | 0 |
-| **SOL fee claimed** | ~$0.00 | 0.000033893 WSOL ($0.0027) | 0.04338 SOL |
-
-Total: `$0.5342 + $0.9422 + $0.0027 = $1.4791` on-chain vs. `$1.48` internal target — matched within rounding.
-
-### Other observations from the same run
-
-- **Priority-fee targeting** closed the position using standard priority parameters without slippage or reverts, via precise bin targeting.
-- **Local state was wiped immediately** after confirmation (`StateDB: removed`) to keep telemetry clean and avoid redundant tracking loops.
-
----
-
-## A note on PnL accuracy vs. Meteora's UI
-
-The `RiskEngine` computes PnL entirely from data it reads directly on-chain (the position account + the pool's `lbPair` account) combined with its own [tiered price feed](#price-feed-tiers) — it does not call Meteora's API or scrape their UI. The showcase above cross-checks that internal number against Solscan's actual settled amounts (ground truth) and Meteora's UI at the same moment, and all three agree within rounding.
-
-That said, the bot's *live* PnL display can transiently differ slightly from what Meteora's UI shows at any given instant — both are reading the same on-chain state, but the USD price feed backing each one (Pyth/Jupiter here vs. whatever Meteora sources internally) can update on a slightly different cadence. This is exactly why `RiskEngine.check()` re-runs on every price tick, not only on-chain events — it keeps the gap as small as possible rather than assuming it's zero.
 
 ---
 
@@ -294,7 +239,7 @@ cp .env.example .env
 # 아래 표를 참고해서 값 채우기
 
 npm run build
-npm run pm2:start   # 운영 환경, pm2로 자동 재시작
+npm start             # 운영 환경
 # 또는
 npm run dev          # ts-node로 로컬 실행, 빌드 불필요
 ```
@@ -323,7 +268,6 @@ npm run dev          # ts-node로 로컬 실행, 빌드 불필요
 | `npm run dev` | 빌드 없이 `ts-node`로 바로 실행 |
 | `npm run build` | TypeScript를 `dist/`로 컴파일 |
 | `npm start` | 컴파일된 빌드 실행 |
-| `npm run pm2:start` / `pm2:stop` / `pm2:logs` | pm2로 프로세스 관리 |
 | `npm test` | 테스트 스위트 실행 (vitest) |
 | `npm run simulate` | 로컬 시뮬레이션 스크립트 실행 |
 
@@ -344,60 +288,6 @@ npm run dev          # ts-node로 로컬 실행, 빌드 불필요
 | `/panic` → `/panic confirm` | 추적 중인 **모든** 포지션 긴급 청산 (30초 확인 대기) |
 
 `/status`를 포함한 모든 알림(신규 포지션, 청산 완료)에는 인라인 버튼이 함께 렌더링되어, 일상적인 사용에는 타이핑이 거의 필요 없습니다.
-
----
-
-## 🎯 실행 & 검증 쇼케이스
-
-시장 변동성을 포착하고, 내부 Risk Engine으로 PnL을 계산해서, Meteora DLMM에서 밀리초 단위 정밀도로 익절(TP) 청산을 실행한 실제 사례입니다.
-
-### 타임라인
-
-액티브 빈 점프를 감지하고 TP 로직이 트리거되어, 약 1.1초 만에 온체인에서 포지션이 완전히 종료됩니다 (RPC 컨펌까지 약 2.5초):
-
-```
-[21:48:22.890]  액티브 빈 점프 감지 (-301 → -300)
-       │  1 ms
-       ▼
-[21:48:22.891]  RiskEngine 트리거 — PnL +1.52% ≥ TP +1.50%
-       │  2 ms
-       ▼
-[21:48:22.893]  청산 트랜잭션 전송
-       │  1,107 ms
-       ▼
-[21:48:24.000]  트랜잭션 온체인 확정 (Solscan 타임스탬프 기준)
-       │  1,651 ms
-       ▼
-[21:48:25.651]  RPC 컨펌 수신
-```
-
-감지부터 전송까지 걸린 시간은 총 **278ms** — 폴링이 아니라 계정 구독 방식으로 추적하는 것의 이점을 보여줍니다.
-
-### 온체인 정산 값과의 교차 검증
-
-청산 시점의 내부 `RiskEngine` 평가액을 실제 온체인 정산 결과(그라운드 트루스, Solscan 기준) 및 Meteora 자체 UI와 비교했습니다:
-
-| | 내부 계산 (RiskEngine) | 온체인 (Solscan) | Meteora UI |
-|---|---|---|---|
-| **MENSA 회수** | 합계 약 $1.48 | 128.909374 MENSA ($0.5342) | 128.91 MENSA |
-| **SOL 회수** | 합계 약 $1.48 | 0.011537728 WSOL ($0.9422) | 0.012 SOL |
-| **MENSA 수수료 클레임** | $0.00 | 0 | 0 |
-| **SOL 수수료 클레임** | 약 $0.00 | 0.000033893 WSOL ($0.0027) | 0.04338 SOL |
-
-합계: 온체인 `$0.5342 + $0.9422 + $0.0027 = $1.4791` vs. 내부 목표값 `$1.48` — 반올림 오차 내로 일치합니다.
-
-### 같은 실행에서 관찰된 것들
-
-- **우선순위 수수료 타겟팅** — 정밀한 빈 타겟팅 덕분에 슬리피지나 트랜잭션 실패 없이 표준 우선순위 파라미터만으로 청산에 성공했습니다.
-- **로컬 상태 즉시 삭제** — 컨펌 직후 (`StateDB: removed`) 로컬 캐시를 지워서 텔레메트리를 깨끗하게 유지하고 중복 추적 루프를 방지합니다.
-
----
-
-## Meteora UI와의 PnL 차이에 대해
-
-`RiskEngine`은 Meteora API를 호출하거나 UI를 긁어오지 않고, 온체인에서 직접 읽은 데이터(포지션 계정 + 풀의 `lbPair` 계정)와 자체 [티어드 가격 피드](#가격-피드-티어)만으로 PnL을 독립적으로 계산합니다. 위 쇼케이스는 그 내부 값을 같은 시점의 Solscan 실제 정산액(그라운드 트루스), Meteora UI와 대조한 것이며, 세 값 모두 반올림 오차 내에서 일치했습니다.
-
-다만 봇의 *실시간* PnL 표시는 특정 순간 Meteora UI가 보여주는 값과 순간적으로 약간 다를 수 있습니다 — 둘 다 같은 온체인 상태를 읽지만, 그걸 USD로 환산하는 가격 소스(여기서는 Pyth/Jupiter, Meteora는 내부적으로 다른 소스를 쓸 수 있음)의 갱신 주기가 다를 수 있기 때문입니다. `RiskEngine.check()`가 온체인 이벤트뿐 아니라 가격 틱마다도 재실행되는 이유가 바로 이것입니다 — 그 격차가 0이라고 가정하는 대신, 최대한 좁게 유지하려는 것입니다.
 
 ---
 
